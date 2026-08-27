@@ -24,6 +24,8 @@ CLI commands run through a per-user background daemon:
 
 For remote or cloud deployments, the daemon supports a custom auth hook: `AGENT_DEVICE_HTTP_AUTH_HOOK` names a module path that is dynamically imported and invoked for each HTTP request (with `AGENT_DEVICE_HTTP_AUTH_EXPORT` selecting the export). The hook runs with the daemon's full privileges, so treat it as part of your trusted computing base: point it only at a read-only path you control, never at a location writable by less-trusted users or processes. Whoever controls the daemon's environment controls the hook.
 
+If a hook is configured but its result does not attest a `tenantId` for a given request, the daemon refuses that request (401) rather than trusting a tenant the client declared itself (RPC body `meta.tenantId`, or the `x-agent-device-tenant` header on the upload/artifact-download/diagnostics routes) — a shared token must not let one caller claim another tenant's identity. A hook that needs per-tenant scoping must attest `tenantId` explicitly; a deployment with no hook configured is unaffected.
+
 ## Sensitive artifacts
 
 Screenshots, recordings, traces, logs, network dumps, audio probes, replay files, provider-hosted cloud videos/logs, and reports can contain private UI state, credentials, tokens, request data, timing signals, or customer information. Store them in a controlled directory, review before sharing, and avoid committing artifacts unless they are intentionally sanitized fixtures.
