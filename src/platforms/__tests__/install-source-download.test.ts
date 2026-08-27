@@ -5,7 +5,7 @@ import { Readable } from 'node:stream';
 import { test, vi } from 'vitest';
 import { mkdtempForTest } from '../../__tests__/test-utils/tmp-dir.ts';
 import { downloadInstallSource } from '../install-source-download.ts';
-import * as networkTransport from '../install-source-network-transport.ts';
+import * as networkTransport from '../../utils/network-trust-transport.ts';
 
 test('download redirects revalidate destinations and strip sensitive cross-origin headers', async () => {
   const tempRoot = await mkdtempForTest('agent-device-download-redirect-');
@@ -161,7 +161,7 @@ function response(
   statusCode: number,
   body: Buffer = Buffer.alloc(0),
   headers: Record<string, string> = {},
-): networkTransport.InstallSourceNetworkResponse {
+): networkTransport.NetworkTrustResponse {
   return {
     statusCode,
     headers,

@@ -23,7 +23,7 @@ import {
 } from '../apple/core/tool-provider.ts';
 import { ANDROID_INSTALL_SOURCE_CONTRACT_EVIDENCE } from './install-source.coverage.ts';
 import { mkdtempForTest } from '../../__tests__/test-utils/tmp-dir.ts';
-import * as networkTransport from '../install-source-network-transport.ts';
+import * as networkTransport from '../../utils/network-trust-transport.ts';
 
 test('validateDownloadSourceUrl rejects localhost and private literal addresses by default', async () => {
   await assert.rejects(

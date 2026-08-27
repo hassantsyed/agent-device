@@ -5,7 +5,7 @@ import { AppError } from '@agent-device/kernel/errors';
 import { MAX_ARTIFACT_COMPRESSED_BYTES } from '../utils/artifact-limits.ts';
 import { createByteLimitStream } from '../utils/byte-limit-stream.ts';
 import { approveDownloadSourceUrl } from './install-source-network.ts';
-import * as networkTransport from './install-source-network-transport.ts';
+import * as networkTransport from '../utils/network-trust-transport.ts';
 
 const MAX_REDIRECTS = 5;
 const REDIRECT_STATUSES = new Set([301, 302, 303, 307, 308]);
@@ -52,7 +52,7 @@ async function requestHop(
   url: URL,
   headers: Record<string, string>,
   signal: AbortSignal,
-): Promise<networkTransport.InstallSourceNetworkResponse> {
+): Promise<networkTransport.NetworkTrustResponse> {
   const approved = await approveDownloadSourceUrl(url, signal);
   try {
     return await networkTransport.requestApprovedUrl({
@@ -74,7 +74,7 @@ async function requestHop(
 }
 
 function readRedirect(
-  response: networkTransport.InstallSourceNetworkResponse,
+  response: networkTransport.NetworkTrustResponse,
   currentUrl: URL,
   redirectCount: number,
 ): URL | undefined {
@@ -93,7 +93,7 @@ function readRedirect(
   return redirected;
 }
 
-function assertSuccessfulResponse(response: networkTransport.InstallSourceNetworkResponse): void {
+function assertSuccessfulResponse(response: networkTransport.NetworkTrustResponse): void {
   if (response.statusCode >= 200 && response.statusCode < 300) return;
   throw new AppError('COMMAND_FAILED', `Failed to download app source: ${response.statusCode}`, {
     status: response.statusCode,
@@ -103,7 +103,7 @@ function assertSuccessfulResponse(response: networkTransport.InstallSourceNetwor
 async function writeResponse(
   tempDir: string,
   url: URL,
-  response: networkTransport.InstallSourceNetworkResponse,
+  response: networkTransport.NetworkTrustResponse,
 ): Promise<string> {
   const encoding = readHeader(response.headers, 'content-encoding');
   if (encoding && encoding.toLowerCase() !== 'identity') {
@@ -165,7 +165,7 @@ function crossOriginHeaders(headers: Record<string, string>): Record<string, str
 }
 
 function resolveDownloadFileName(
-  response: networkTransport.InstallSourceNetworkResponse,
+  response: networkTransport.NetworkTrustResponse,
   parsedUrl: URL,
 ): string {
   const disposition = readHeader(response.headers, 'content-disposition');

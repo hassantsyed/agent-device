@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'vitest';
-import { matchesNoProxy, resolveProxyForUrl } from '../install-source-network-transport.ts';
+import { matchesNoProxy, resolveProxyForUrl } from './network-trust-transport.ts';
 
 test('lowercase proxy variables override uppercase even when empty', () => {
   assert.equal(

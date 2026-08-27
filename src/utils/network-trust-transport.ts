@@ -1,7 +1,7 @@
 import net from 'node:net';
 import { Agent, ProxyAgent, request, type Dispatcher } from 'undici';
 
-export type InstallSourceNetworkResponse = {
+export type NetworkTrustResponse = {
   statusCode: number;
   headers: Record<string, string | string[] | undefined>;
   body: NodeJS.ReadableStream;
@@ -14,7 +14,9 @@ export async function requestApprovedUrl(params: {
   family: 4 | 6;
   headers: Record<string, string>;
   signal: AbortSignal;
-}): Promise<InstallSourceNetworkResponse> {
+  method?: 'GET' | 'POST';
+  body?: string;
+}): Promise<NetworkTrustResponse> {
   const proxy = resolveProxyForUrl(params.url);
   const dispatcher = proxy
     ? proxyDispatcher(proxy, params.url)
@@ -27,8 +29,9 @@ export async function requestApprovedUrl(params: {
       dispatcher,
       headers: proxy ? { ...params.headers, host: params.url.host } : params.headers,
       maxRedirections: 0,
-      method: 'GET' as const,
+      method: params.method ?? 'GET',
       signal: params.signal,
+      ...(params.body !== undefined ? { body: params.body } : {}),
     };
     const response = await request(dispatchUrl, requestOptions);
     return {

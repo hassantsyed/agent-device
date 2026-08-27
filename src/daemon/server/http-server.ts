@@ -37,6 +37,7 @@ import { sendRestJsonError, statusCodeForNormalizedError } from '../http-errors.
 import { tryHandleUploadHttpRoute } from '../upload-http.ts';
 import { tryHandleDownloadableArtifactHttpRoute } from '../downloadable-artifact-http.ts';
 import { tryHandleRequestDiagnosticsHttpRoute } from '../request-diagnostics-http.ts';
+import { applyHttpInstallSourceTrustPolicy, resolveHttpTrustPolicy } from './http-trust-policy.ts';
 
 type JsonRpcRequest = JsonRpcRequestEnvelope;
 
@@ -75,8 +76,6 @@ export type HttpAuthHook = (
 type HttpAuthDecision =
   | { ok: true; tenantId?: string }
   | { ok: false; statusCode: number; response: JsonRpcResponse };
-
-type HttpInstallSource = Exclude<DaemonInstallSource, { kind: 'path' }>;
 
 const MAX_HTTP_RPC_BODY_BYTES = 1024 * 1024;
 const COMMAND_RPC_METHODS = new Set(['agent_device.command', 'agent-device.command']);
@@ -221,7 +220,7 @@ function readGitHubArtifactInteger(record: Record<string, unknown>, key: 'artifa
   return parsed;
 }
 
-function parseGitHubActionsArtifactSource(record: Record<string, unknown>): HttpInstallSource {
+function parseGitHubActionsArtifactSource(record: Record<string, unknown>): DaemonInstallSource {
   const owner = readRequiredGitHubArtifactText(record, 'owner');
   const repo = readRequiredGitHubArtifactText(record, 'repo');
   const hasArtifactId = record.artifactId !== undefined;
@@ -290,7 +289,7 @@ function toLeaseDaemonRequest(
   };
 }
 
-function parseInstallSource(params: Record<string, unknown>): HttpInstallSource {
+function parseInstallSource(params: Record<string, unknown>): DaemonInstallSource {
   const source = params.source;
   if (!source || typeof source !== 'object') {
     throw new AppError('INVALID_ARGS', 'Invalid params: source is required');
@@ -320,18 +319,21 @@ function parseInstallSource(params: Record<string, unknown>): HttpInstallSource 
     return Object.keys(headers).length > 0 ? { kind: 'url', url, headers } : { kind: 'url', url };
   }
   if (record.kind === 'path') {
-    throw new AppError(
-      'INVALID_ARGS',
-      'Invalid params: source.kind "path" names a file on the daemon host and is not accepted over HTTP',
-      { hint: 'Use a "url" or "github-actions-artifact" source.' },
-    );
+    const artifactPath = typeof record.path === 'string' ? record.path.trim() : '';
+    if (!artifactPath) {
+      throw new AppError(
+        'INVALID_ARGS',
+        'Invalid params: source.path is required for path sources',
+      );
+    }
+    return { kind: 'path', path: artifactPath };
   }
   if (record.kind === 'github-actions-artifact') {
     return parseGitHubActionsArtifactSource(record);
   }
   throw new AppError(
     'INVALID_ARGS',
-    'Invalid params: source.kind must be "url" or "github-actions-artifact"',
+    'Invalid params: source.kind must be "url", "path", or "github-actions-artifact"',
   );
 }
 
@@ -489,10 +491,12 @@ async function runHttpAuthHook(
   return { ok: true };
 }
 
-async function loadHttpAuthHook(): Promise<HttpAuthHook | null> {
-  const hookPath = process.env.AGENT_DEVICE_HTTP_AUTH_HOOK;
+async function loadHttpAuthHook(
+  env: NodeJS.ProcessEnv = process.env,
+): Promise<HttpAuthHook | null> {
+  const hookPath = env.AGENT_DEVICE_HTTP_AUTH_HOOK;
   if (!hookPath) return null;
-  const exportName = process.env.AGENT_DEVICE_HTTP_AUTH_EXPORT || 'default';
+  const exportName = env.AGENT_DEVICE_HTTP_AUTH_EXPORT || 'default';
   const resolvedPath = path.isAbsolute(hookPath) ? hookPath : path.resolve(hookPath);
   let imported: Record<string, unknown>;
   try {
@@ -517,6 +521,7 @@ export async function createDaemonHttpServer(options: {
   handleRequest: DaemonInvokeFn;
   token?: string;
   retainArtifacts?: boolean;
+  env?: NodeJS.ProcessEnv;
   /**
    * Resolves a request diagnostics record path for the `/sessions/.../requests/...`
    * route (#1801). Omitted by embedded servers with no session store; the route
@@ -525,7 +530,12 @@ export async function createDaemonHttpServer(options: {
    */
   resolveRequestDiagnosticsPath?: (ref: DiagnosticsRecordRef) => string;
 }): Promise<http.Server> {
-  const authHook = await loadHttpAuthHook();
+  const environment = options.env ?? process.env;
+  const authHook = await loadHttpAuthHook(environment);
+  const trustPolicy = await resolveHttpTrustPolicy({
+    authHookConfigured: authHook !== null,
+    env: environment,
+  });
   const { handleRequest, token, retainArtifacts = false, resolveRequestDiagnosticsPath } = options;
   return http.createServer((req, res) => {
     if (req.method === 'GET' && req.url === '/health') {
@@ -642,7 +652,7 @@ export async function createDaemonHttpServer(options: {
       let handlerCompleted = false;
       try {
         const params = rpcRequest.params as Record<string, unknown>;
-        const daemonRequest = methodToDaemonRequest(rpcRequest.method, params, req.headers);
+        let daemonRequest = methodToDaemonRequest(rpcRequest.method, params, req.headers);
         if (
           isCommandRpcMethod(rpcRequest.method) &&
           (typeof daemonRequest.command !== 'string' || daemonRequest.command.length === 0)
@@ -682,6 +692,13 @@ export async function createDaemonHttpServer(options: {
               daemonRequest.meta?.sessionIsolation ??
               daemonRequest.flags?.sessionIsolation ??
               'tenant',
+          };
+        }
+        daemonRequest = await applyHttpInstallSourceTrustPolicy(daemonRequest, trustPolicy);
+        if (trustPolicy.networkAccess === 'public-only') {
+          daemonRequest.internal = {
+            ...daemonRequest.internal,
+            networkAccess: trustPolicy.networkAccess,
           };
         }
 
