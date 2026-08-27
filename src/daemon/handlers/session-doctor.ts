@@ -7,7 +7,7 @@ import { isActiveProviderDevice } from '../../provider-device-runtime.ts';
 import {
   listLocalDeviceInventory,
   shouldPropagateDeviceInventoryProbeError,
-} from '../../request/device-inventory-context.ts';
+} from '@agent-device/capture-kit/device-inventory-context';
 import { readVersion } from '../../utils/version.ts';
 import type { DaemonRequest, DaemonResponse, SessionState } from '../types.ts';
 import { SessionStore } from '../session-store.ts';

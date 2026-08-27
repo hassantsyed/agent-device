@@ -10,7 +10,7 @@ import {
 } from '../utils/png-worker-client.ts';
 import { annotateDiffRegions } from './screenshot-diff-region-overlay.ts';
 import { summarizeDiffRegions, type ScreenshotDiffRegion } from './screenshot-diff-regions.ts';
-import type { ImageDimensions } from '../utils/screenshot-geometry.ts';
+import type { ImageDimensions } from '@agent-device/kernel/screenshot-geometry';
 
 export type ScreenshotDimensionMismatch = {
   expected: ImageDimensions;
