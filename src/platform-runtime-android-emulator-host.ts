@@ -1,5 +1,5 @@
 import type { DeviceReadinessRuntimeHost } from '@agent-device/contracts/device-readiness-runtime';
-import { listLocalDeviceInventory } from '@agent-device/capture-kit/device-inventory-context';
+import { listLocalDeviceInventory } from './request/device-inventory-context.ts';
 import { runCmdDetached } from './utils/exec.ts';
 import { stopPidsWithEscalation } from './utils/host-process.ts';
 

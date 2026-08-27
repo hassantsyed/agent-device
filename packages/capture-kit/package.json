@@ -12,10 +12,6 @@
     ".": {
       "types": "./src/index.ts",
       "default": "./src/index.ts"
-    },
-    "./device-inventory-context": {
-      "types": "./src/device-inventory-context.ts",
-      "default": "./src/device-inventory-context.ts"
     }
   }
 }

@@ -90,6 +90,7 @@ import {
 } from './platform-package-repository.ts';
 import { policyLead, policyViolation, ZONE_POLICIES } from './zone-policy.ts';
 import { contractsImplementationAuthorityViolations } from './contracts-implementation-policy.ts';
+import { substrateDomainShapeViolations } from './substrate-domain-shape.ts';
 import { selectorPipelineOwnershipViolations } from './selector-pipeline-ownership.ts';
 import { recordRuntimeRegistryJoinViolations } from './record-runtime-registry-policy.ts';
 import { recordRuntimeDaemonMechanicsViolations } from './record-runtime-mechanics-policy.ts';
@@ -534,6 +535,7 @@ export const LAYERING_RULE_IDS = [
   'session-resource-ownership',
   'application-lifecycle-ownership',
   'contracts-implementation-authority',
+  'substrate-domain-shape',
   'selector-pipeline-ownership',
   'back-edges',
   'type-spine-inversions',
@@ -559,6 +561,10 @@ export const LAYERING_RULES: Readonly<Record<LayeringRuleId, LayeringRule>> = {
     applicationLifecycleOwnershipViolations(context.sources),
   'contracts-implementation-authority': (context) =>
     checkContractsImplementationAuthority(context.sources),
+  'substrate-domain-shape': (context) =>
+    substrateDomainShapeViolations(
+      [...context.allTypeScriptSources].map(([path, source]) => ({ path, source })),
+    ),
   'selector-pipeline-ownership': (context) =>
     selectorPipelineOwnershipViolations(context.edges, workspaceSpecifierTargets(repoRoot)),
   'back-edges': (context) => checkBackEdges(context.edges),

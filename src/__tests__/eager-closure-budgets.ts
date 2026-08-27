@@ -109,9 +109,6 @@ export const FACADE_BUDGETS: Readonly<Record<string, number>> = Object.freeze({
   'packages/ad-replay/src/index.ts': 62,
 
   // --- @agent-device/ad-script ---
-  // +4: format, recorded-input, target-evidence-tree, and parseReplayInput join the codec façade
-  // after leaving root src. Consumers of the façade (selectors, maestro, ad-replay) move by the
-  // same 4; the CLI already had three of those modules via other edges and moves by 1.
   'packages/ad-script/src/index.ts': 41,
 
   // --- @agent-device/platform-apple/runner ---
@@ -125,7 +122,6 @@ export const FACADE_BUDGETS: Readonly<Record<string, number>> = Object.freeze({
   // --- @agent-device/capture-kit ---
   // R60 review: audio-probe split into descriptor/status/recovery/live-process modules (+3 files).
   'packages/capture-kit/src/index.ts': 32,
-  'packages/capture-kit/src/device-inventory-context.ts': 3,
 
   // --- @agent-device/contracts ---
   'packages/contracts/src/alert-contract.ts': 1,
@@ -188,7 +184,6 @@ export const FACADE_BUDGETS: Readonly<Record<string, number>> = Object.freeze({
   'packages/contracts/src/interaction.ts': 1,
   'packages/contracts/src/interaction-error.ts': 1,
   'packages/contracts/src/interaction-guarantees.ts': 1,
-  'packages/contracts/src/interaction-outcome.ts': 1,
   'packages/contracts/src/interactor-types.ts': 1,
   'packages/contracts/src/keyboard.ts': 1,
   'packages/contracts/src/logs-runtime-plan.ts': 5,
@@ -222,7 +217,6 @@ export const FACADE_BUDGETS: Readonly<Record<string, number>> = Object.freeze({
   'packages/contracts/src/selector-observation-runtime.ts': 1,
   'packages/contracts/src/settings.ts': 3,
   'packages/contracts/src/snapshot-presentation.ts': 2,
-  'packages/contracts/src/snapshot-quality-warnings.ts': 1,
   'packages/contracts/src/snapshot-runtime.ts': 3,
   'packages/contracts/src/snapshot-timeout-evidence.ts': 1,
   'packages/contracts/src/startup-recovery-fence.ts': 1,
