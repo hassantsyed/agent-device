@@ -123,3 +123,38 @@ test('macOS apps consumes generic readiness and app inventory through one runtim
   expect(ensureReady).toHaveBeenCalledOnce();
   expect(listApps).toHaveBeenCalledOnce();
 });
+
+test('deferred provider apps returns uploaded assets without resolving a device', async () => {
+  const sessionStore = makeSessionStore();
+  const listAvailableApps = vi.fn(async () => ['Example.apk', 'Settings.apk']);
+  const req: DaemonRequest = {
+    token: 'test-token',
+    session: 'limrun-apps',
+    command: 'apps',
+    positionals: [],
+    flags: {
+      platform: 'android',
+      leaseProvider: 'limrun',
+    },
+  };
+
+  const response = await handleSessionInventoryCommands({
+    req,
+    sessionName: req.session,
+    sessionStore,
+    inspectFacts,
+    bindDevice,
+    providerAppCatalog: listAvailableApps,
+  });
+
+  expect(response).toEqual({
+    ok: true,
+    data: { apps: ['Example.apk', 'Settings.apk'] },
+  });
+  expect(listAvailableApps).toHaveBeenCalledWith({
+    provider: 'limrun',
+    platform: 'android',
+  });
+  expect(inspectFacts).not.toHaveBeenCalled();
+  expect(bindCount).toBe(0);
+});

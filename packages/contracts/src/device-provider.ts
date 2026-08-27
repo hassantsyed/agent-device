@@ -66,3 +66,14 @@ export type ProviderDeviceInventorySource = Readonly<{
     signal: AbortSignal,
   ): Promise<ProviderDeviceInventoryOutcome>;
 }>;
+
+export type ProviderAppCatalogQuery = Readonly<{
+  provider: string;
+  platform: 'android' | 'ios';
+}>;
+
+/** Provider-owned apps that can be materialized with a newly allocated device. */
+export type ProviderAppCatalog = (
+  query: ProviderAppCatalogQuery,
+  signal?: AbortSignal,
+) => Promise<readonly string[] | undefined>;

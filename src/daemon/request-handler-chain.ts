@@ -4,7 +4,7 @@ import { AppError } from '@agent-device/kernel/errors';
 import { getDaemonCommandRoute } from './daemon-command-registry.ts';
 import * as genericRequestHandlerModule from './request-generic-dispatch.ts';
 import type { DaemonCommandContext } from './context.ts';
-import type { LeaseLifecycleProvider } from '@agent-device/contracts/device';
+import type { LeaseLifecycleProvider, ProviderAppCatalog } from '@agent-device/contracts/device';
 import type { LeaseRegistry } from './lease-registry.ts';
 import type { SessionStore } from './session-store.ts';
 import type { DaemonInvokeFn, DaemonRequest, DaemonResponse } from './types.ts';
@@ -34,6 +34,7 @@ type RequestHandlerChainParams = {
   providerRuntimeRequiredIds?: readonly string[];
   leaseLifecycleProvider?: LeaseLifecycleProvider;
   cloudArtifactProvider?: CloudArtifactProvider;
+  providerAppCatalog?: ProviderAppCatalog;
   invoke: DaemonInvokeFn;
   invokeReplayAction?: DaemonInvokeFn;
   /**
@@ -148,6 +149,7 @@ async function runSessionHandler(
       sessionStore: params.sessionStore,
       leaseRegistry: params.leaseRegistry,
       leaseLifecycleProvider: params.leaseLifecycleProvider,
+      providerAppCatalog: params.providerAppCatalog,
       invoke: params.invoke,
       invokeReplayAction: params.invokeReplayAction,
       androidAdbExecutor: params.providerScope.androidAdbExecutor,
